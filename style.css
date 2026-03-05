@@ -1,0 +1,52 @@
+:root {
+  --primary-pink: #FF91A4;
+  --gold: #D4AF37;
+  --white-silk: #F8F9FA;
+  --dark-text: #2D3436;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  background-color: #FFF5F7;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--dark-text);
+}
+
+#three-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+#ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 5vh;
+  pointer-events: none;
+}
+
+#greeting-container {
+  width: 100%;
+  text-align: center;
+}
+
+#three-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  cursor: pointer;
+  touch-action: none;
+}
