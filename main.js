@@ -84,22 +84,113 @@ text3.scale.set(0.1, 0.1, 0.1);
 text8.visible = false;
 text3.visible = false;
 
-// Wish Text (The one being pulled by balloons)
-const wishText = new Text();
-scene.add(wishText);
-wishText.text = "8/3 này không cần quà xa xỉ, vì 'Quà' đây chỉ muốn\nđược 'tặng' trọn con tim cho em!";
-wishText.fontSize = 0.55;
-wishText.lineHeight = 1.2;
-wishText.maxWidth = 7;
-wishText.textAlign = 'center';
-wishText.anchorX = 'center';
-wishText.anchorY = 'middle';
-wishText.position.set(0, 0, 0);
-wishText.color = 0xD63031;
-wishText.outlineWidth = 0.04;
-wishText.outlineColor = 0xffffff;
-wishText.visible = false;
-wishText.sync();
+// -----------------------------------------------------------
+// ENVELOPE (Pulled by balloons)
+// -----------------------------------------------------------
+const envelopeGroup = new THREE.Group();
+envelopeGroup.visible = false;
+scene.add(envelopeGroup);
+
+// --- FLOWER TEXTURE FOR ENVELOPE ---
+const floralCanvas = document.createElement('canvas');
+floralCanvas.width = 512; floralCanvas.height = 512;
+const fCtx = floralCanvas.getContext('2d');
+fCtx.fillStyle = '#FFFFFF';
+fCtx.fillRect(0, 0, 512, 512);
+
+// Draw random flowers and leaves
+for (let i = 0; i < 70; i++) {
+    const isFlower = Math.random() > 0.4;
+    let cx = Math.random() * 512;
+    let cy = Math.random() * 512;
+
+    if (isFlower) {
+        fCtx.fillStyle = ['#FFB7B2', '#FF9AA2', '#FFDAC1'][Math.floor(Math.random() * 3)];
+        fCtx.beginPath();
+        for (let p = 0; p < 5; p++) {
+            fCtx.ellipse(cx + Math.cos(p * Math.PI * 2 / 5) * 15, cy + Math.sin(p * Math.PI * 2 / 5) * 15, 12, 12, 0, 0, 2 * Math.PI);
+        }
+        fCtx.fill();
+        fCtx.fillStyle = '#E2F0CB';
+        fCtx.beginPath();
+        fCtx.arc(cx, cy, 6, 0, 2 * Math.PI);
+        fCtx.fill();
+    } else {
+        fCtx.fillStyle = '#A8D5BA'; // leaf color
+        fCtx.beginPath();
+        fCtx.ellipse(cx, cy, 18 + Math.random() * 12, 8 + Math.random() * 4, Math.random() * Math.PI, 0, 2 * Math.PI);
+        fCtx.fill();
+    }
+}
+const floralTexture = new THREE.CanvasTexture(floralCanvas);
+floralTexture.wrapS = floralTexture.wrapT = THREE.RepeatWrapping;
+floralTexture.repeat.set(1.5, 1.5);
+
+const envelopeWidth = 5.5;
+const envelopeHeight = 3.5;
+const envMatBack = new THREE.MeshPhysicalMaterial({
+    map: floralTexture,
+    color: 0xFFFFFF, // Base white
+    roughness: 0.6,
+    metalness: 0.1,
+    clearcoat: 0.2, // Subtle premium sheen
+    side: THREE.DoubleSide
+});
+
+const envBackGeo = new THREE.PlaneGeometry(envelopeWidth, envelopeHeight);
+const envBack = new THREE.Mesh(envBackGeo, envMatBack);
+envBack.position.z = -0.05;
+envBack.receiveShadow = true;
+envelopeGroup.add(envBack);
+
+const frontShape = new THREE.Shape();
+frontShape.moveTo(-envelopeWidth / 2, -envelopeHeight / 2);
+frontShape.lineTo(envelopeWidth / 2, -envelopeHeight / 2);
+frontShape.lineTo(envelopeWidth / 2, envelopeHeight / 2);
+frontShape.lineTo(0, 0); // V-cut
+frontShape.lineTo(-envelopeWidth / 2, envelopeHeight / 2);
+frontShape.lineTo(-envelopeWidth / 2, -envelopeHeight / 2);
+const frontGeo = new THREE.ShapeGeometry(frontShape);
+const envFront = new THREE.Mesh(frontGeo, envMatBack);
+envFront.position.z = 0.05;
+envFront.receiveShadow = true;
+envelopeGroup.add(envFront);
+
+const topFlapShape = new THREE.Shape();
+topFlapShape.moveTo(-envelopeWidth / 2, 0);
+topFlapShape.lineTo(envelopeWidth / 2, 0);
+topFlapShape.lineTo(0, -envelopeHeight / 2);
+topFlapShape.lineTo(-envelopeWidth / 2, 0);
+const topFlapGeo = new THREE.ShapeGeometry(topFlapShape);
+const envTopFlap = new THREE.Mesh(topFlapGeo, envMatBack);
+envTopFlap.position.set(0, envelopeHeight / 2, 0.06);
+envelopeGroup.add(envTopFlap);
+
+const sealShape = new THREE.Shape();
+sealShape.moveTo(0, 0.3);
+sealShape.bezierCurveTo(0, 0.4, -0.2, 0.65, -0.5, 0.65);
+sealShape.bezierCurveTo(-0.9, 0.65, -0.9, 0.1, -0.9, 0.1);
+sealShape.bezierCurveTo(-0.9, -0.3, -0.5, -0.7, 0, -1.0);
+sealShape.bezierCurveTo(0.5, -0.7, 0.9, -0.3, 0.9, 0.1);
+sealShape.bezierCurveTo(0.9, 0.1, 0.9, 0.65, 0.5, 0.65);
+sealShape.bezierCurveTo(0.2, 0.65, 0, 0.4, 0, 0.3);
+
+const sealGeo = new THREE.ExtrudeGeometry(sealShape, { depth: 0.1, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 3 });
+const sealMat = new THREE.MeshStandardMaterial({
+    color: 0xD63031, // Red wax heart (hoặc bạn có thể dùng màu tuỳ thích)
+    roughness: 0.3,
+    metalness: 0.2
+});
+const waxSeal = new THREE.Mesh(sealGeo, sealMat);
+waxSeal.scale.set(0.3, 0.3, 0.3);
+waxSeal.position.set(0, -envelopeHeight / 2 + 0.3, 0.02);
+envTopFlap.add(waxSeal);
+
+const paperGeo = new THREE.PlaneGeometry(envelopeWidth - 0.4, envelopeHeight - 0.4);
+const paperMat = new THREE.MeshPhysicalMaterial({ color: 0xFFFFFF, roughness: 1.0, side: THREE.DoubleSide });
+const letterPaper = new THREE.Mesh(paperGeo, paperMat);
+letterPaper.position.set(0, 0, 0);
+envelopeGroup.add(letterPaper);
 
 // -----------------------------------------------------------
 // 4. BEAUTIFUL GIFT BOX
@@ -213,43 +304,8 @@ tagGroup.add(tagString);
 // -----------------------------------------------------------
 // 5. PARTICLES & DECORATIONS
 // -----------------------------------------------------------
-const particles = [];
 const confettiElements = [];
 const particleColors = [0xFF6B81, 0xFF91A4, 0xFF4757, 0x70A1FF, 0x27AE60, 0xF1C40F, 0xFF8C00];
-
-function createParticles() {
-    const isMobile = window.innerWidth / window.innerHeight < 1;
-    for (let i = 0; i < 120; i++) {
-        // High-end translucent balloons
-        const size = Math.random() * 0.15 + 0.15;
-        const balloonGeo = new THREE.SphereGeometry(size, 24, 24); // Smoother
-        balloonGeo.scale(1, 1.2, 1);
-        const balloonMat = new THREE.MeshPhysicalMaterial({
-            color: new THREE.Color().setHSL(Math.random(), 0.8, 0.6),
-            metalness: 0.1, roughness: 0.1, transmission: 0.6, thickness: 1.0,
-            transparent: true, opacity: 0.95, clearcoat: 1.0
-        });
-        const mesh = new THREE.Mesh(balloonGeo, balloonMat);
-        mesh.visible = false;
-        // Scale up only for mobile
-        if (isMobile) mesh.scale.set(1.9, 1.9, 1.9);
-        scene.add(mesh);
-        particles.push({ mesh, active: false, velocity: new THREE.Vector3(), factor: Math.random() });
-    }
-}
-
-const leaders = [];
-function setupLeaders() {
-    for (let i = 0; i < 15; i++) leaders.push(particles[i]);
-}
-
-const strings = [];
-const stringMaterial = new THREE.LineBasicMaterial({ color: 0xcccccc, transparent: true, opacity: 0 });
-for (let i = 0; i < 15; i++) {
-    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), stringMaterial);
-    scene.add(line);
-    strings.push(line);
-}
 
 const decorations = [];
 function createDecorations() {
@@ -277,8 +333,6 @@ function createDecorations() {
     }
 }
 
-createParticles();
-setupLeaders();
 createDecorations();
 
 // -----------------------------------------------------------
@@ -287,6 +341,7 @@ createDecorations();
 const mouse = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
 let isOpened = false;
+let isLetterReading = false;
 
 let targetRotationX = 0, targetRotationY = 0;
 let mouseX = 0, mouseY = 0, isDragging = false, startMouseX = 0, startMouseY = 0;
@@ -352,19 +407,73 @@ window.addEventListener('touchend', (e) => {
 });
 
 function checkRaycast(e) {
+    if (isLetterReading) return; // Prevent clicks while reading
+
     if (isOpened) {
-        // Simple logic: If opened, any valid click/tap on canvas closes it
-        toggleBox();
+        raycaster.setFromCamera(mouse, camera);
+        const intersectsEnvelope = raycaster.intersectObjects([envelopeGroup], true);
+        if (intersectsEnvelope.length > 0) {
+            openLetter();
+        } else {
+            toggleBox();
+        }
         return;
     }
 
-    // If closed, use raycaster to see if we hit the box
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects([giftBoxGroup], true);
     if (intersects.length > 0) {
         toggleBox();
     }
 }
+
+function openLetter() {
+    if (isLetterReading) return;
+    isLetterReading = true;
+
+    // Animate flap open and push it slightly behind the paper to prevent overlapping (Z-fighting / clipping)
+    gsap.to(envTopFlap.rotation, { x: Math.PI, duration: 1.0, ease: "power2.inOut" });
+    gsap.to(envTopFlap.position, { z: -0.08, duration: 1.0, ease: "power2.inOut" });
+
+    // Scale down the whole envelope entirely out of view smoothly while showing the HTML
+    gsap.to(envelopeGroup.scale, {
+        x: 0, y: 0, z: 0,
+        duration: 0.8,
+        delay: 0.6,
+        ease: "power2.in"
+    });
+
+    gsap.to(letterPaper.position, {
+        y: 2.2, duration: 1.0, delay: 0.6, ease: "power2.out", onComplete: () => {
+            document.getElementById('letter-overlay').classList.add('active');
+            document.getElementById('three-canvas').classList.add('blur-bg');
+            envelopeGroup.visible = false; // complete hide when faded
+        }
+    });
+}
+
+function closeLetter() {
+    isLetterReading = false;
+    document.getElementById('letter-overlay').classList.remove('active');
+    document.getElementById('three-canvas').classList.remove('blur-bg');
+
+    envelopeGroup.visible = true; // bring it back
+
+    const aspect = window.innerWidth / window.innerHeight;
+    const isMobile = aspect < 1;
+    const envAppearingScale = isMobile ? 0.8 : 0.6; // Nho hon tren desktop, to hon tren mobile
+
+    gsap.to(envelopeGroup.scale, { x: envAppearingScale, y: envAppearingScale, z: envAppearingScale, duration: 0.8, ease: "power2.out" });
+    gsap.to(letterPaper.position, { y: 0, duration: 1.0, delay: 0.4, ease: "power2.in" });
+    gsap.to(envTopFlap.rotation, { x: 0, duration: 1.0, delay: 0.8, ease: "power2.inOut" });
+    gsap.to(envTopFlap.position, {
+        z: 0.06, duration: 1.0, delay: 0.8, ease: "power2.inOut", onComplete: () => {
+            if (isOpened) toggleBox(); // Auto close the gift box afterward
+        }
+    });
+}
+
+document.getElementById('close-letter').addEventListener('click', closeLetter);
 
 function toggleBox() {
     if (gsap.isTweening(lid.position)) return;
@@ -379,21 +488,18 @@ function toggleBox() {
         gsap.to(lid.position, { x: 10, y: 40, z: -20, duration: 2.5, ease: "back.in(1.2)", onComplete: () => { if (isOpened) lid.visible = false; } });
         gsap.to(lid.rotation, { x: Math.PI * 3, y: Math.PI, duration: 3 });
 
-        wishText.visible = true; wishText.position.set(0, 0, 0); wishText.scale.set(0.1, 0.1, 0.1);
-        gsap.to(wishText.scale, { x: 1, y: 1, z: 1, duration: 3, ease: "back.out(1.2)" });
-        gsap.to(stringMaterial, { opacity: 0.6, duration: 3 });
+        envelopeGroup.visible = true; envelopeGroup.position.set(0, 2, 0); envelopeGroup.scale.set(0.1, 0.1, 0.1);
+        const envAppearingScale = isMobile ? 0.8 : 0.6;
+        gsap.to(envelopeGroup.scale, { x: envAppearingScale, y: envAppearingScale, z: envAppearingScale, duration: 3, ease: "back.out(1.2)" });
 
-        const balloonY = isMobile ? 12 : 5.5;
-        const spreadR = isMobile ? 3.5 : 2.5;
+        // Auto open the letter after a short delay
+        setTimeout(() => {
+            if (isOpened && !isLetterReading) {
+                openLetter();
+            }
+        }, 1800); // Trigger while it's still settling in
+
         const baselineY = 0; // Numbers now level with the box on all devices
-
-        particles.forEach(p => {
-            p.mesh.visible = true; p.active = true; p.mesh.scale.set(0.1, 0.1, 0.1);
-            const a = Math.random() * Math.PI * 2, r = Math.random() * spreadR;
-            gsap.to(p.mesh.position, { x: Math.cos(a) * r, y: balloonY + Math.random() * 6, z: Math.sin(a) * r * 0.5, duration: 3.5, ease: "power3.out" });
-            const s = isMobile ? 1.9 : 1;
-            gsap.to(p.mesh.scale, { x: s, y: s, z: s, duration: 3, ease: "back.out(1.5)" });
-        });
 
         text8.visible = text3.visible = true;
         const spreadX = isMobile ? 6 : 5; // Wider spread for mobile box
@@ -406,18 +512,15 @@ function toggleBox() {
         const targetScale = isMobile ? 1 : 0.6; // Reduced for Tablet/Desktop
 
         gsap.to(giftBoxGroup.scale, { x: targetScale, y: targetScale, z: targetScale, duration: 2 });
-        gsap.to(stringMaterial, { opacity: 0, duration: 1 });
-        particles.forEach(p => {
-            gsap.to(p.mesh.position, { x: 0, y: 0, z: 0, duration: 2, onComplete: () => { if (!isOpened) p.mesh.visible = false; } });
-            gsap.to(p.mesh.scale, { x: 0.1, y: 0.1, z: 0.1, duration: 2 });
-        });
-        gsap.to(wishText.scale, { x: 0.1, y: 0.1, z: 0.1, duration: 2, onComplete: () => { if (!isOpened) wishText.visible = false; } });
+        gsap.to(envelopeGroup.scale, { x: 0.1, y: 0.1, z: 0.1, duration: 1.5, ease: "power2.in", onComplete: () => { if (!isOpened) envelopeGroup.visible = false; } });
+        gsap.to(envelopeGroup.position, { x: 0, y: 0, z: 0, duration: 1.5, ease: "power2.in" });
+        gsap.to(envelopeGroup.rotation, { x: 0, y: 0, z: 0, duration: 1.5, ease: "power2.in" });
         gsap.to(text8.position, { x: 0, duration: 2 });
         gsap.to(text3.position, { x: 0, duration: 2 });
         gsap.to([text8.scale, text3.scale], { x: 0.1, y: 0.1, z: 0.1, duration: 2, onComplete: () => { if (!isOpened) text8.visible = text3.visible = false; } });
         lid.visible = true;
-        gsap.to(lid.position, { x: 0, y: lidOriginalPos.y, z: 0, delay: 1.5, duration: 2 });
-        gsap.to(lid.rotation, { x: 0, y: 0, z: 0, delay: 1.5, duration: 2 });
+        gsap.to(lid.position, { x: 0, y: lidOriginalPos.y, z: 0, delay: 1.0, duration: 2, ease: "bounce.out" });
+        gsap.to(lid.rotation, { x: 0, y: 0, z: 0, delay: 1.0, duration: 2, ease: "power2.out" });
     }
 }
 
@@ -450,28 +553,24 @@ function animate() {
         // Numbers level with box (Y=0) + floating animation
         text8.position.y = text3.position.y = baseFloat;
 
-        let avgX = 0, avgY = 0, avgZ = 0;
-        leaders.forEach(l => { avgX += l.mesh.position.x; avgY += l.mesh.position.y; avgZ += l.mesh.position.z; });
         const isMobile = window.innerWidth / window.innerHeight < 1;
-        // Lift text much higher on mobile to avoid obscuring
-        const textOffset = isMobile ? 2.5 : 3.5;
-        wishText.position.x += (avgX / 15 - wishText.position.x) * 0.05;
-        wishText.position.y += (avgY / 15 - textOffset - wishText.position.y) * 0.05;
-        wishText.position.z += (avgZ / 15 - wishText.position.z) * 0.05;
-        wishText.rotation.z = Math.sin(elapsedTime) * 0.03;
-        wishText.rotation.y = Math.cos(elapsedTime * 0.5) * 0.05;
+        const targetYOffset = isMobile ? 5.5 : 4.5; // Hiện lên phía trên hộp quà
+        const targetZOffset = 0.5; // Ngay trên hộp
+
+        envelopeGroup.position.x += (0 - envelopeGroup.position.x) * 0.05;
+        envelopeGroup.position.y += ((targetYOffset + baseFloat * 2) - envelopeGroup.position.y) * 0.05;
+        envelopeGroup.position.z += (targetZOffset - envelopeGroup.position.z) * 0.05;
+
+        if (!isLetterReading) {
+            envelopeGroup.rotation.z = Math.sin(elapsedTime) * 0.03;
+            envelopeGroup.rotation.y = Math.cos(elapsedTime * 0.5) * 0.05;
+        } else {
+            envelopeGroup.rotation.z += (0 - envelopeGroup.rotation.z) * 0.05;
+            envelopeGroup.rotation.y += (0 - envelopeGroup.rotation.y) * 0.05;
+        }
 
         // Add subtle sway to the tag when floating
         tagGroup.rotation.z = 0.1 + Math.sin(elapsedTime * 2) * 0.05;
-    }
-
-    if (stringMaterial.opacity > 0) {
-        strings.forEach((s, i) => {
-            // Widen the attachment points for a bigger bunch feel
-            const spreadWidth = window.innerWidth / window.innerHeight < 1 ? 7.5 : 5.5;
-            const staticOffsetX = ((i / 15) - 0.5) * spreadWidth;
-            s.geometry.setFromPoints([new THREE.Vector3(wishText.position.x + staticOffsetX, wishText.position.y + 0.2, wishText.position.z), leaders[i].mesh.position]);
-        });
     }
 
     decorations.forEach(d => { d.mesh.rotation.x += d.rotSpeed; d.mesh.position.y += Math.sin(elapsedTime * d.floatSpeed + d.offset) * 0.01; });
@@ -512,20 +611,10 @@ function updateMobileView() {
         text8.position.y = text3.position.y = 0; // Always level with box
     }
 
-    // Scale particles based on device
-    particles.forEach(p => {
-        const s = isMobile ? 1.8 : 1;
-        p.mesh.scale.set(s, s, s);
-    });
-
     text8.fontSize = 5.5 * fontScale;
     text3.fontSize = 5.5 * fontScale;
 
-    // Force 2 lines on mobile
-    wishText.maxWidth = isMobile ? 20 : 10; // Large enough to prevent auto-wrap
-    wishText.fontSize = isMobile ? 0.5 : 0.55;
-
-    [text8, text3, wishText].forEach(t => t.sync());
+    [text8, text3].forEach(t => t.sync());
 }
 
 window.addEventListener('resize', updateMobileView);
