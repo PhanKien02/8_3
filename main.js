@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { gsap } from 'gsap';
 import { Text } from 'troika-three-text';
+import musicUrl from './music.mp3';
 
-const bgMusic = new Audio('./music.mp3');
+const bgMusic = new Audio(musicUrl);
 
 // -----------------------------------------------------------
 // 1. SCENE SETUP
