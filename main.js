@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { gsap } from 'gsap';
 import { Text } from 'troika-three-text';
 
+const bgMusic = new Audio('./music.mp3');
+
 // -----------------------------------------------------------
 // 1. SCENE SETUP
 // -----------------------------------------------------------
@@ -431,6 +433,11 @@ function openLetter() {
     if (isLetterReading) return;
     isLetterReading = true;
 
+    if (bgMusic.ended) {
+        bgMusic.currentTime = 0;
+    }
+    bgMusic.play().catch(e => console.log("Audio play failed:", e));
+
     // Animate flap open and push it slightly behind the paper to prevent overlapping (Z-fighting / clipping)
     gsap.to(envTopFlap.rotation, { x: Math.PI, duration: 1.0, ease: "power2.inOut" });
     gsap.to(envTopFlap.position, { z: -0.08, duration: 1.0, ease: "power2.inOut" });
@@ -454,6 +461,7 @@ function openLetter() {
 
 function closeLetter() {
     isLetterReading = false;
+
     document.getElementById('letter-overlay').classList.remove('active');
     document.getElementById('three-canvas').classList.remove('blur-bg');
 
