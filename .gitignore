@@ -43,7 +43,6 @@ next-env.d.ts
 .github/prompts
 .agent
 .agents
-/dist
 /design-system
 
 
